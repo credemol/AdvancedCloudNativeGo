@@ -43,6 +43,8 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 
 ---?image=https://2.bp.blogspot.com/-4c7UAsVGTnw/WVmhDkAG0FI/AAAAAAAANXI/UpBW9hxHxVkyP9DUWyNJfQuz6AnRLbq5QCLcBGAs/s640/bb-cna.jpg&size=auto 100%
 
+---?image=https://4.bp.blogspot.com/-kdEZZoaBhJQ/WVmhDjQiX2I/AAAAAAAANXM/qC1AiUTiJ3I3njICaBqBvn6djcBvINjrACLcBGAs/s640/bb-cna1.jpg&size=auto 100%
+
 ---
 ## 2. Service Discovery and Configuration
 
