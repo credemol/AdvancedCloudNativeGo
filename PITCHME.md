@@ -14,16 +14,6 @@
 
 
 ---
-## Configuration
-
-```sh
-$ export GOPATH=~/go
-
-$ mkdir -p ${GOPATH}/src/AdvancedCloudNativeGo
-$ cd ${GOPATH}/src/AdvancedCloudNativeGo
-```
-
----
 ## 1. Go Microservice Frameworks
 
 1. The course overview
@@ -31,19 +21,6 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 1. Overview of Go microservice frameworks and libraries
 1. Advanced Go microservice implementation
 1. Containerization and composition with Docker
-
----
-### The course overview
-
---- 
-#### What we will learn
-![what-we-will-learn](https://user-images.githubusercontent.com/5771924/35202385-c728d00a-ff65-11e7-9aa9-c7794162eb78.png)
-####
-
-
----?image=https://2.bp.blogspot.com/-4c7UAsVGTnw/WVmhDkAG0FI/AAAAAAAANXI/UpBW9hxHxVkyP9DUWyNJfQuz6AnRLbq5QCLcBGAs/s640/bb-cna.jpg&size=auto 100%
-
----?image=https://4.bp.blogspot.com/-kdEZZoaBhJQ/WVmhDjQiX2I/AAAAAAAANXM/qC1AiUTiJ3I3njICaBqBvn6djcBvINjrACLcBGAs/s640/bb-cna1.jpg&size=auto 100%
 
 ---
 ## 2. Service Discovery and Configuration
@@ -63,6 +40,79 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 1. Using circuit breakers for resilient communication
 1. Implement message queuing with Rabbitmq
 1. Implement publish/subscribe with Apache Kafka
+---
+## Configuration
+
+```sh
+$ export GOPATH=~/go
+
+$ mkdir -p ${GOPATH}/src/AdvancedCloudNativeGo
+$ cd ${GOPATH}/src/AdvancedCloudNativeGo
+```
+
 
 ---
+### The course overview
 
+--- 
+#### What we will learn
+![what-we-will-learn](https://user-images.githubusercontent.com/5771924/35202385-c728d00a-ff65-11e7-9aa9-c7794162eb78.png)
+####
+
+
+---
+#### Pre-Requisites
+
+- Basic programming skills and Go knowledge
+- Any modern operating system (Windows 10, mac OS, Linux)
+- Working Go language installation, see https://golang.org/
+- IDE with Go support (for example: Visual Studio Code or Gogland)
+- Docker toolbox or Docker native installation
+- Local Kubernetes installation
+- See https://github.com/kubernetes/minikube
+
+---
+## Go Microservice Frameworks
+
+- Cloud native app platforms, Go microservice frameworks
+- Writing Docker file for the advanced Go microservice
+- Deployment, service, and edge server in Kubernetes
+- Advanced REST service using the Gin web framework
+- Using Docker compose to build and run microservice locally
+
+---
+### Anatomy of a Cloud Native Application Platform
+
+- Understanding the building blocks of a cloud native application platform
+- Understanding the key functions of such a platform
+- Knowing key technologies from the cloud native landspace
+
+---
+#### Building Blocks and Functions of a Cloud Native Application Platform
+
+![cloud-native-app-platform](https://user-images.githubusercontent.com/5771924/35207815-639418a6-ff88-11e7-8f97-0db352b692f4.png)
+
+
+---?image=https://2.bp.blogspot.com/-4c7UAsVGTnw/WVmhDkAG0FI/AAAAAAAANXI/UpBW9hxHxVkyP9DUWyNJfQuz6AnRLbq5QCLcBGAs/s640/bb-cna.jpg&size=auto 100%
+
+---?image=https://4.bp.blogspot.com/-kdEZZoaBhJQ/WVmhDjQiX2I/AAAAAAAANXM/qC1AiUTiJ3I3njICaBqBvn6djcBvINjrACLcBGAs/s640/bb-cna1.jpg&size=auto 100%
+
+
+---
+![https://github.com/cncf/landscape](https://raw.githubusercontent.com/cncf/landscape/master/landscape/CloudNativeLandscape_latest.png)
+
+---
+### Overview of Go Microservice Frameworks and Libraries
+
+- Overviewing individual libraries and its examples
+- Overviewing individual service frameworks and its examples
+- Overviewing individual web frameworks and its examples
+
+---
+#### Overview of Go Microservice Frameworks and Libraries
+
+Individual Libraries       | Service Frameworks      | Web Frameworks
+---------------------------|-------------------------|-------------------
+<ul><li>afex/hystrix-go</li><li>armon/go-metrics</li><li>Sirupsen/logrus</li><li>grpc/grps-go</li><li>spacemonkeygo/monkit</li></ul>|<ul><li>Gizmo</li><li>Go Micro</li></li>Go Kit</li><li>Kite</li></ul>|<ul><li>Gin Gonic</li><li>Gorilla</li><li>Goji</li><li>Go Martini</li></ul>
+
+---
