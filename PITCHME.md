@@ -111,8 +111,8 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 ---
 #### Overview of Go Microservice Frameworks and Libraries
 
-Individual Libraries       | Service Frameworks      | Web Frameworks
----------------------------|-------------------------|-------------------
-<ul><li>afex/hystrix-go</li><li>armon/go-metrics</li><li>Sirupsen/logrus</li><li>grpc/grps-go</li><li>spacemonkeygo/monkit</li></ul>|<ul><li>Gizmo</li><li>Go Micro</li></li>Go Kit</li><li>Kite</li></ul>|<ul><li>Gin Gonic</li><li>Gorilla</li><li>Goji</li><li>Go Martini</li></ul>
+Individual Libraries   | Service Frameworks    | Web Frameworks
+-----------------------|-----------------------|-------------------
+<ul><li>afex/hystrix-go</li><li>armon/go-metrics</li><li>Sirupsen/logrus</li><li>grpc/grps-go</li><li>spacemonkeygo/ monkit</li></ul>|<ul><li>Gizmo</li><li>Go Micro</li></li>Go Kit</li><li>Kite</li></ul>|<ul><li>Gin Gonic</li><li>Gorilla</li><li>Goji</li><li>Go Martini</li></ul>
 
 ---
