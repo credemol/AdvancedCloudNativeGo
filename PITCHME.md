@@ -46,10 +46,11 @@
 ```sh
 $ export GOPATH=~/go
 
-$ mkdir -p ${GOPATH}/src/AdvancedCloudNativeGo
-$ cd ${GOPATH}/src/AdvancedCloudNativeGo
+$ mkdir -p ${GOPATH}/src/github.com/credemol/AdvancedCloudNativeGo
+$ cd ${GOPATH}/src/github.com/credemol/AdvancedCloudNativeGo
 ```
 
+> In this case, credemol is my username registered on github.com.
 
 ---
 ### The course overview
