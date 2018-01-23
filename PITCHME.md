@@ -116,3 +116,23 @@ Individual Libraries   | Service Frameworks    | Web Frameworks
 <ul><li>afex/hystrix-go</li><li>armon/go-metrics</li><li>Sirupsen/logrus</li><li>grpc/grps-go</li><li>spacemonkeygo/ monkit</li></ul>|<ul><li>Gizmo</li><li>Go Micro</li></li>Go Kit</li><li>Kite</li></ul>|<ul><li>Gin Gonic</li><li>Gorilla</li><li>Goji</li><li>Go Martini</li></ul>
 
 ---
+#### Individual Libraries
+
+- [grpc/grpc-go](https://github.com/grpc/grpc-go)
+- [apex/hystrix-go](https://github.com/afex/hystrix-go)
+- [go-metrics](https://github.com/armon/go-metrics)
+- [spacemonkeygo/monkit](https://github.com/spacemonkeygo/monkit)
+- [sirupsen/logrus](https://github.com/Sirupsen/logrus)
+
+#### Service Frameworks
+
+- [go-kit/kit](https://github.com/go-kit/kit)
+- [micro/go-micro](https://github.com/micro/go-micro)
+- [NYTimes/gizmo](https://github.com/nytimes/gizmo)
+
+#### Web Frameworks
+
+- [Gorilla web toolkit](http://www.gorillatoolkit.org)
+- [gin/gonic/gin](https://github.com/gin-gonic/gin)
+
+--- 
