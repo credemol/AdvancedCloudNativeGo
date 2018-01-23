@@ -81,7 +81,7 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 - Using Docker compose to build and run microservice locally
 
 ---
-### Anatomy of a Cloud Native Application Platform
+### 1.1 Anatomy of a Cloud Native Application Platform
 
 - Understanding the building blocks of a cloud native application platform
 - Understanding the key functions of such a platform
@@ -102,7 +102,7 @@ $ cd ${GOPATH}/src/AdvancedCloudNativeGo
 ![https://github.com/cncf/landscape](https://raw.githubusercontent.com/cncf/landscape/master/landscape/CloudNativeLandscape_latest.png)
 
 ---
-### Overview of Go Microservice Frameworks and Libraries
+### 1.2 Overview of Go Microservice Frameworks and Libraries
 
 - Overviewing individual libraries and its examples
 - Overviewing individual service frameworks and its examples
@@ -124,15 +124,41 @@ Individual Libraries   | Service Frameworks    | Web Frameworks
 - [spacemonkeygo/monkit](https://github.com/spacemonkeygo/monkit)
 - [sirupsen/logrus](https://github.com/Sirupsen/logrus)
 
+---
 #### Service Frameworks
 
 - [go-kit/kit](https://github.com/go-kit/kit)
 - [micro/go-micro](https://github.com/micro/go-micro)
 - [NYTimes/gizmo](https://github.com/nytimes/gizmo)
 
+---
 #### Web Frameworks
 
 - [Gorilla web toolkit](http://www.gorillatoolkit.org)
 - [gin/gonic/gin](https://github.com/gin-gonic/gin)
 
+----
+### 1.3 Advanced Go microservice implementation
+
+- Implement basic HTTP microservice server with Configurable port
+- Implement basic routing logic for different paths and verbs
+- Implement JSON request and response processing
+
+---
+#### main.go
+
+```sh
+$ cd ${GOPATH}/src/AdvancedCloudNativeGo
+$ vi main.go
+```
+
+---
+####
+
+```go
+
+```
+
+
 --- 
+# Q & A
