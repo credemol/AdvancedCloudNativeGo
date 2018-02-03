@@ -2857,6 +2857,12 @@ networks:
 
 ```sh
 $ docker-compose build
+$ docker-compose up
+
+$ docker container ls
+$ docker container kill kafka_kafka-subscriber_1
+$ docker container start kafka_kafka-subscriber_1
+
 ```
 
 --- 
