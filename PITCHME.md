@@ -52,6 +52,7 @@ $ mkdir -p ${GOPATH}/src/github.com/your-github-username/AdvancedCloudNativeGo
 $ cd ${GOPATH}/src/github.com/your-github-username/AdvancedCloudNativeGo
 ```
 
+> Working Directory: ${GOPATH}/src/github.com/your-github-username/AdvancedCloudNativeGo
 > In this case, your-github-username means your username registered on github.com.
 
 ---
@@ -60,7 +61,6 @@ $ cd ${GOPATH}/src/github.com/your-github-username/AdvancedCloudNativeGo
 --- 
 #### What we will learn
 ![what-we-will-learn](https://user-images.githubusercontent.com/5771924/35202385-c728d00a-ff65-11e7-9aa9-c7794162eb78.png)
-####
 
 
 ---
@@ -140,7 +140,7 @@ Individual Libraries   | Service Frameworks    | Web Frameworks
 - [Gorilla web toolkit](http://www.gorillatoolkit.org)
 - [gin/gonic/gin](https://github.com/gin-gonic/gin)
 
-----
+---
 ### 1.3 Advanced Go microservice implementation
 
 - Implement basic HTTP microservice server with Configurable port
@@ -148,8 +148,24 @@ Individual Libraries   | Service Frameworks    | Web Frameworks
 - Implement JSON request and response processing
 
 ---
-#### main.go
+### Gin-Web Files
 
+```
+Frameworks//Gin-Web/
+├── Dockerfile
+├── book.go
+├── docker-compose.yml
+├── favicon.ico
+├── kubernetes
+│   ├── k8s-deployment.yml
+│   ├── k8s-ingress.yml
+│   └── k8s-service.yml
+├── main.go
+└── templates
+    └── index.html
+```
+
+---
 ##### Download and Install gin
 [gin/gonic/gin](https://github.com/gin-gonic/gin)
 
@@ -157,6 +173,7 @@ Individual Libraries   | Service Frameworks    | Web Frameworks
 $ go get github.com/gin-gonic/gin
 ```
 
+---
 ##### Create main.go file
 ```sh
 $ cd ${GOPATH}/src/github.com/credemol/AdvancedCloudNativeGo
@@ -788,7 +805,7 @@ $ open http://localhost:8500/ui
 - [Get Consul Catalog Services](http://localhost:8500/v1/catalog/services)
 - [Get Consul Agent Services](http://localhost:8500/v1/agent/services)
 
-
+---
 #### Register Consul (Gin-Web-01)
 
 - URL: [http://localhost:8500/v1/agent/service/register](http://localhost:8500/v1/agent/service/register)
@@ -1117,6 +1134,7 @@ $ mkdir -p Discovery/Simple/client && cd "$_"
 
 ```
 
+---
 #### Discovery/Simple/client/simple-client.go
 
 ```go
@@ -1518,7 +1536,7 @@ spec:
           initialDelaySeconds: 10
           timeoutSeconds: 5
 ```
-@[6](replicas)
+@[6-6](replicas)
 @[11-19](simple-k8s-server pods)
 @[21-32](readinessProbe and livenessProbe)
 
@@ -1631,7 +1649,7 @@ spec:
 status: {}
 
 ```
-@[12](set the value of replicas as 2)
+@[13](set the value of replicas as 2)
 @[31-42](readinessProbe and livenessProbe)
 
 ---
