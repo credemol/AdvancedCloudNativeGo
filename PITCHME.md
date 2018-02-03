@@ -1538,10 +1538,6 @@ $ cd Discovery/Kubernetes
 #### Discovery/Kubernetes/docker-compose.yml
 
 ```yaml
----
-#### Discovery/Kubernetes/docker-compose.yml
-
-```yaml
 version: '3'
 
 services: 
@@ -1785,9 +1781,13 @@ $ mkdir -p Communication/Go-Micro/proto && cd "$_"
 Protocol Buffers are a language-neutral, platform-neutral extensible mechanism for serializing structured data.
 
 [https://developers.google.com/protocol-buffers/](https://developers.google.com/protocol-buffers/)
+[https://github.com/grpc/grpc-go](https://github.com/grpc/grpc-go)
 
 ```sh
-$ go get -u github.com/golang/protobuf/protoc-gen-go
+#$ go get -u github.com/golang/protobuf/protoc-gen-go
+#$ go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+$ go get github.com/micro/protobuf/{proto,protoc-gen-go}
+$ go get -u google.golang.org/grpc
 # make sure that protoc-gen-go has been installed.
 # It must be in your $PATH for the protocol compiler protoc to find it.
 $ ls ${GOPATH}/bin
@@ -1811,7 +1811,7 @@ $ protoc --version
 #### Communication/Go-Micro/proto/greeter.proto
 
 ```proto
-syntax = "proto3"
+syntax = "proto3";
 
 service Greeter {
     rpc Hello(HelloRequest) returns (HelloResponse) {}
@@ -1826,6 +1826,1038 @@ message HelloResponse {
 }
 ```
 
+---
+#### generate go source file
+
+> protoc -I=$SRC_DIR --go_out=$DST_DIR $SRC_DIR/addressbook.proto
+[https://github.com/micro/go-micro](https://github.com/micro/go-micro)
+```sh
+#$ protoc --go_out=plugins=grpc:. greeter.proto
+$ cd Communication/Go-Micro/proto
+#$ protoc --go_out=plugins=micro:. greeter.proto
+$ go get github.com/micro/protobuf/{proto,protoc-gen-go}
+$ protoc -I ./proto/ ./proto/greeter.proto --go_out=plugins=micro:proto
+$ 
+$ ls -l
+$ cat greeter.pb.go
+```
+
+---
+#### Install go-micro
+
+```sh
+$ go get github.com/micro/go-micro
+```
+
+---
+#### Communication/Go-Micro/server/main.go
+
+```go
+
+package main
+
+import (
+	"fmt"
+
+	proto "github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/proto"
+	micro "github.com/micro/go-micro"
+	"golang.org/x/net/context"
+)
+
+type Greeter struct{}
+
+func (g *Greeter) Hello(ctx context.Context, req *proto.HelloRequest, rsp *proto.HelloResponse) error {
+	rsp.Greeting = "Hello " + req.Name
+
+	fmt.Printf("Responding with %s\n", rsp.Greeting)
+	return nil
+}
+
+func main() {
+	service := micro.NewService(
+		micro.Name("greeter"),
+		micro.Version("1.0.1"),
+		micro.Metadata(map[string]string{
+			"type": "helloworld",
+		}),
+	)
+
+	service.Init()
+
+	proto.RegisterGreeterHandler(service.Server(), new(Greeter))
+
+	if err := service.Run(); err != nil {
+		fmt.Println(err)
+	}
+}
+
+```
+
+---
+#### Communication/Go-Micro/server/Dockerfile
+
+```dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get -u github.com/micro/micro && \
+    go get github.com/micro/protobuf/proto && \
+    go get -u github.com/micro/protobuf/protoc-gen-go
+
+ENV SOURCES /go/src/github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}server/ && CGO_ENABLED=0 go build
+
+ENV CONSUL_HTTP_ADDR localhost:8500
+
+WORKDIR ${SOURCES}server/
+CMD ${SOURCES}server/server
+```
+
+---
+#### Communication/Go-Micro/client/main.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	proto "github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/proto"
+	micro "github.com/micro/go-micro"
+	"golang.org/x/net/context"
+)
+
+func main() {
+	service := micro.NewService(
+		micro.Name("greeter"),
+		micro.Version("latest"),
+		micro.Metadata(map[string]string{
+			"type": "helloworld",
+		}),
+	)
+
+	service.Init()
+
+	greeter := proto.NewGreeterClient("greeter", service.Client())
+	callEvery(3*time.Second, greeter, hello)
+}
+
+func hello(t time.Time, greeter proto.GreeterClient) {
+	rsp, err := greeter.Hello(context.TODO(), &proto.HelloRequest{Name: "Nick, calling at " + t.String()})
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Printf("%s\n", rsp.Greeting)
+}
+
+func callEvery(d time.Duration, greeter proto.GreeterClient, f func(time.Time, proto.GreeterClient)) {
+	for x := range time.Tick(d) {
+		f(x, greeter)
+	}
+}
+
+```
+
+---
+#### Communication/Go-Micro/client/Dockerfile
+
+```dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get -u github.com/micro/micro && \
+    go get github.com/micro/protobuf/proto && \
+    go get -u github.com/micro/protobuf/protoc-gen-go && \
+    go get github.com/micro/go-plugins/wrapper/breaker/hystrix && \
+    go get github.com/afex/hystrix-go/hystrix
+
+ENV SOURCES /go/src/github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}client/ && CGO_ENABLED=0 go build
+
+ENV CONSUL_HTTP_ADDR localhost:8500
+
+WORKDIR ${SOURCES}client/
+CMD ${SOURCES}client/client
+```
+
+
+---
+#### Communication/Go-Micro/docker-compose.yml
+
+```yaml
+version: '2'
+
+services: 
+  consul:
+    image: consul:0.8.3
+    ports:
+      - "8300:8300"
+      - "8400:8400"
+      - "8500:8500"
+    networks:
+      - sky-net
+
+  go-micro-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: go-micro-server:1.0.1
+    environment: 
+    - CONSUL_HTTP_ADDR=consul:8500
+    depends_on:
+      - consul
+    networks:
+      - sky-net
+
+  go-micro-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: go-micro-client:1.0.1     
+    environment: 
+    - CONSUL_HTTP_ADDR=consul:8500 
+    depends_on:
+      - consul
+      - go-micro-server
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
+  
+```
+
+---
+#### build
+
+```sh
+$ docker-compose build
+$ docker-compose up
+/*
+$ cd proto
+$ go install
+$ cd ../server
+$ go build
+$ cd ../client
+$ go build
+$ cd ..
+*/
+```
+
+---
+### 3.3 Using circuit breakers for resilient communication
+
+- Implementing synchronous call using a circuit breaker
+- Defining fallback behavior in case of service errors
+- Configuring circuit breaker and adding monitoring dashboard
+
+---
+#### Histrix Hot it works
+![Hystrix](https://www.slideshare.net/ufried/resilience-with-hystrix)
+
+---
+#### Communication/Go-Micro/client/main.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"net"
+	"net/http"
+	"time"
+
+	hystrix "github.com/afex/hystrix-go/hystrix"
+	proto "github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/proto"
+	micro "github.com/micro/go-micro"
+	breaker "github.com/micro/go-plugins/wrapper/breaker/hystrix"
+	"golang.org/x/net/context"
+)
+
+func main() {
+	service := micro.NewService(
+		micro.Name("greeter"),
+		micro.Version("latest"),
+		micro.Metadata(map[string]string{
+			"type": "helloworld",
+		}),
+	)
+
+	service.Init(
+		micro.WrapClient(breaker.NewClientWrapper()),
+	)
+
+	hystrix.DefaultVolumeThreshold = 3
+	hystrix.DefaultErrorPercentThreshold = 75
+	hystrix.DefaultTimeout = 500
+	hystrix.DefaultSleepWindow = 3500
+
+	hystrixStreamHandler := hystrix.NewStreamHandler()
+	hystrixStreamHandler.Start()
+	go http.ListenAndServe(net.JoinHostPort("", "8081"), hystrixStreamHandler)
+
+	greeter := proto.NewGreeterClient("greeter", service.Client())
+	callEvery(3*time.Second, greeter, hello)
+}
+
+func hello(t time.Time, greeter proto.GreeterClient) {
+	rsp, err := greeter.Hello(context.TODO(), &proto.HelloRequest{Name: "Nick, calling at " + t.String()})
+
+	if err != nil {
+		if err.Error() == "hystrix: timeout" {
+			fmt.Printf("%s. Insert fallback logic here.\n", err.Error())
+		} else {
+			fmt.Println(err.Error())
+		}
+
+		return
+	}
+	fmt.Printf("%s\n", rsp.Greeting)
+}
+
+func callEvery(d time.Duration, greeter proto.GreeterClient, f func(time.Time, proto.GreeterClient)) {
+	for x := range time.Tick(d) {
+		f(x, greeter)
+	}
+}
+```
+
+
+---
+#### Communication/Go-Micro/server/main.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	proto "github.com/credemol/AdvancedCloudNativeGo/Communication/Go-Micro/proto"
+	micro "github.com/micro/go-micro"
+	"golang.org/x/net/context"
+)
+
+type Greeter struct{}
+
+var counter int
+
+func (g *Greeter) Hello(ctx context.Context, req *proto.HelloRequest, rsp *proto.HelloResponse) error {
+	counter++
+	if counter > 7 && counter < 15 {
+		time.Sleep(1000 * time.Millisecond)
+	} else {
+		time.Sleep(100 * time.Millisecond)
+	}
+	rsp.Greeting = "Hello " + req.Name
+
+	fmt.Printf("Responding with %s\n", rsp.Greeting)
+	return nil
+}
+
+func main() {
+	service := micro.NewService(
+		micro.Name("greeter"),
+		micro.Version("1.0.1"),
+		micro.Metadata(map[string]string{
+			"type": "helloworld",
+		}),
+	)
+
+	service.Init()
+
+	proto.RegisterGreeterHandler(service.Server(), new(Greeter))
+
+	if err := service.Run(); err != nil {
+		fmt.Println(err)
+	}
+}
+
+```
+
+---
+#### docker-compose.yml
+
+```yaml
+version: '2'
+
+services: 
+  consul:
+    image: consul:0.8.3
+    ports:
+      - "8300:8300"
+      - "8400:8400"
+      - "8500:8500"
+    networks:
+      - sky-net
+
+  go-micro-server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: go-micro-server:1.0.1
+    environment: 
+    - CONSUL_HTTP_ADDR=consul:8500
+    depends_on:
+      - consul
+    networks:
+      - sky-net
+
+  go-micro-client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    image: go-micro-client:1.0.1     
+    environment: 
+    - CONSUL_HTTP_ADDR=consul:8500 
+    depends_on:
+      - consul
+      - go-micro-server
+    networks:
+      - sky-net
+
+  hystrix-dashboard:
+    image: mlabouardy/hystrix-dashboard:latest
+    ports:
+      - "9002:9002"
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
+  
+```
+
+---
+#### hystrix dashboard
+
+
+---
+### 3.4 Implement Message Queuing with RabbitMQ
+
+- Implementing message producer for RabbitMQ
+- Implementing message consumer and processing logic
+- Running the mesage queue, and consumer with Docker compose
+
+---
+#### Initialize Project
+
+```sh
+$ mkdir -p Communication/RabbitMQ/consumer
+$ mkdir -p Communication/RabbitMQ/producer && cd "$_"
+```
+
+---
+#### Communication/RabbitMQ/producer/producer.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/streadway/amqp"
+)
+
+func main() {
+	fmt.Println("Starting RabbitMQ producer...")
+	time.Sleep(7 * time.Second)
+
+	conn, err := amqp.Dial(brokerAddr())
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		queue(), // name
+		true,    // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	msgCount := 0
+
+	// Get signal for finish
+	doneCh := make(chan struct{})
+
+	go func() {
+		for {
+			msgCount++
+			body := fmt.Sprintf("Hello RabbitMQ message %v", msgCount)
+
+			err = ch.Publish(
+				"",     // exchange
+				q.Name, // routing key
+				false,  // mandatory
+				false,  // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(body),
+				})
+			log.Printf(" [x] Sent %s", body)
+			failOnError(err, "Failed to publish a message")
+
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	<-doneCh
+}
+
+func brokerAddr() string {
+	brokerAddr := os.Getenv("BROKER_ADDR")
+	if len(brokerAddr) == 0 {
+		brokerAddr = "amqp://guest:guest@localhost:5672/"
+	}
+	return brokerAddr
+}
+
+func queue() string {
+	queue := os.Getenv("QUEUE")
+	if len(queue) == 0 {
+		queue = "default-queue"
+	}
+	return queue
+}
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+```
+
+---
+#### Communication/RabbitMQ/producer/Dockerfile
+
+```Dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get github.com/streadway/amqp
+
+ENV SOURCES /go/src/github.com/PacktPublishing/Advanced-Cloud-Native-Go/Communication/RabbitMQ/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}producer/ && CGO_ENABLED=0 go build
+
+ENV BROKER_ADDR amqp://guest:guest@localhost:5672/
+
+WORKDIR ${SOURCES}producer/
+CMD ${SOURCES}producer/producer
+```
+
+---
+#### Communication/RabbitMQ/consumer/consumer.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/streadway/amqp"
+)
+
+func main() {
+	fmt.Println("Starting RabbitMQ consumer...")
+	time.Sleep(7 * time.Second)
+
+	conn, err := amqp.Dial(brokerAddr())
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		queue(), // name
+		true,    // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	msgs, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	failOnError(err, "Failed to register a consumer")
+
+	forever := make(chan bool)
+
+	go func() {
+		for d := range msgs {
+			log.Printf("Received a message: %s", d.Body)
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
+}
+
+func brokerAddr() string {
+	brokerAddr := os.Getenv("BROKER_ADDR")
+	if len(brokerAddr) == 0 {
+		brokerAddr = "amqp://guest:guest@localhost:5672/"
+	}
+	return brokerAddr
+}
+
+func queue() string {
+	queue := os.Getenv("QUEUE")
+	if len(queue) == 0 {
+		queue = "default-queue"
+	}
+	return queue
+}
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+	}
+}
+
+```
+
+---
+#### Communication/RabbitMQ/consumer/Dockerfile
+
+```dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get github.com/streadway/amqp
+
+ENV SOURCES /go/src/github.com/PacktPublishing/Advanced-Cloud-Native-Go/Communication/RabbitMQ/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}consumer/ && CGO_ENABLED=0 go build
+
+ENV BROKER_ADDR amqp://guest:guest@localhost:5672/
+
+WORKDIR ${SOURCES}consumer/
+CMD ${SOURCES}consumer/consumer
+
+```
+
+---
+#### Communication/RabbitMQ/docker-compose.yml
+
+```yaml
+version: '2'
+
+services: 
+  rabbitmq:
+    image: rabbitmq:3.6.9-management-alpine
+    ports:
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "15671:15671"
+      - "15672:15672"
+      - "25672:25672"
+    environment: 
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - sky-net
+
+  rabbitmq-producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    image: rabbitmq-producer:1.0.1
+    environment: 
+      - BROKER_ADDR=amqp://guest:guest@rabbitmq:5672/
+      - QUEUE=test-queue
+    depends_on:
+      - rabbitmq
+    links:
+      - rabbitmq
+    networks:
+      - sky-net
+
+  rabbitmq-consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    image: rabbitmq-consumer:1.0.1     
+    environment: 
+      - BROKER_ADDR=amqp://guest:guest@rabbitmq:5672/
+      - QUEUE=test-queue
+    depends_on:
+      - rabbitmq
+    links:
+      - rabbitmq
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
+```
+
+---
+#### Build and Run
+
+```sh
+$ docker-compose build
+$ docker-compose up
+```
+
+---
+#### RabbitMQ Management
+
+[http://localhost:15672](http://localhost:15672)
+
+Username: guest
+Password: guest
+
+```sh
+$ docker container ls
+$ docker container stop rabbitmq_rabbitmq-consumer_1
+$ docker container start rabbitmq_rabbitmq-consumer_1
+
+```
+
+---
+### 3.5 Implement Publish/Subscribe with Apache Kafka
+
+- Implementing message publishing to Apache Kafka
+- Implementing topic subscription and processing logic
+- Run Apache Kafca, publisher, and subscriber with Docker compose
+
+---
+#### Initialize Project
+
+```sh
+$ mkdir -p Communication/Kafka/subscriber
+$ mkdir -p Communication/Kafka/producer && cd "$_"
+```
+
+---
+#### Communication/Kafka/producer/producer.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"time"
+
+	"github.com/Shopify/sarama"
+)
+
+func main() {
+	fmt.Println("Starting synchronous Kafka producer...")
+	time.Sleep(5 * time.Second)
+
+	config := sarama.NewConfig()
+	config.Producer.Return.Successes = true
+	config.Producer.Return.Errors = true
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Retry.Max = 5
+
+	brokers := []string{brokerAddr()}
+	producer, err := sarama.NewSyncProducer(brokers, config)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := producer.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	topic := topic()
+	msgCount := 0
+
+	// Get signal for finish
+	doneCh := make(chan struct{})
+
+	go func() {
+		for {
+			msgCount++
+
+			msg := &sarama.ProducerMessage{
+				Topic: topic,
+				Value: sarama.StringEncoder(fmt.Sprintf("Hello Kafka %v", msgCount)),
+			}
+
+			partition, offset, err := producer.SendMessage(msg)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Printf("Message is stored in topic(%s)/partition(%d)/offset(%d)\n", topic, partition, offset)
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	<-doneCh
+}
+
+func brokerAddr() string {
+	brokerAddr := os.Getenv("BROKER_ADDR")
+	if len(brokerAddr) == 0 {
+		brokerAddr = "localhost:9092"
+	}
+	return brokerAddr
+}
+
+func topic() string {
+	topic := os.Getenv("TOPIC")
+	if len(topic) == 0 {
+		topic = "default-topic"
+	}
+	return topic
+}
+
+```
+
+---
+#### Communication/Kafka/producer/Dockerfile
+
+```dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get github.com/Shopify/sarama
+
+ENV SOURCES /go/src/github.com/PacktPublishing/Advanced-Cloud-Native-Go/Communication/Kafka/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}producer/ && CGO_ENABLED=0 go build
+
+ENV BROKER_ADDR localhost:9092
+
+WORKDIR ${SOURCES}producer/
+CMD ${SOURCES}producer/producer
+
+```
+
+---
+#### Communication/Kafka/subscriber/subscriber.go
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"time"
+
+	"github.com/Shopify/sarama"
+)
+
+func main() {
+	fmt.Println("Starting synchronous Kafka subscriber...")
+	time.Sleep(5 * time.Second)
+
+	config := sarama.NewConfig()
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Consumer.Offsets.CommitInterval = 5 * time.Second
+	config.Consumer.Return.Errors = true
+
+	// Create new consumer
+	brokers := []string{brokerAddr()}
+	master, err := sarama.NewConsumer(brokers, config)
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := master.Close(); err != nil {
+			panic(err)
+		}
+	}()
+
+	topic := topic()
+
+	// decide about the offset here: literal value, sarama.OffsetOldest, sarama.OffsetNewest
+	// this is important in case of reconnection
+	consumer, err := master.ConsumePartition(topic, 0, sarama.OffsetOldest)
+	if err != nil {
+		panic(err)
+	}
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
+
+	// Count how many message processed
+	msgCount := 0
+
+	// Get signal for finish
+	doneCh := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case err := <-consumer.Errors():
+				fmt.Println(err)
+			case msg := <-consumer.Messages():
+				msgCount++
+				fmt.Println("Received messages", string(msg.Key), string(msg.Value))
+			case <-signals:
+				fmt.Println("Interrupt is detected")
+				doneCh <- struct{}{}
+			}
+		}
+	}()
+
+	<-doneCh
+	fmt.Println("Processed", msgCount, "messages")
+}
+
+func brokerAddr() string {
+	brokerAddr := os.Getenv("BROKER_ADDR")
+	if len(brokerAddr) == 0 {
+		brokerAddr = "localhost:9092"
+	}
+	return brokerAddr
+}
+
+func topic() string {
+	topic := os.Getenv("TOPIC")
+	if len(topic) == 0 {
+		topic = "default-topic"
+	}
+	return topic
+}
+
+```
+
+---
+#### Communication/Kafka/subscriber/Dockerfile
+
+```dockerfile
+FROM golang:1.8.1-alpine
+
+RUN apk update && apk upgrade && apk add --no-cache bash git
+
+RUN go get github.com/Shopify/sarama
+
+ENV SOURCES /go/src/github.com/PacktPublishing/Advanced-Cloud-Native-Go/Communication/Kafka/
+COPY . ${SOURCES}
+
+RUN cd ${SOURCES}subscriber/ && CGO_ENABLED=0 go build
+
+ENV BROKER_ADDR localhost:9092
+
+WORKDIR ${SOURCES}subscriber/
+CMD ${SOURCES}subscriber/subscriber
+
+```
+
+---
+#### Communication/Kafka/docker-compose.yml
+
+```yaml
+version: '2'
+
+services: 
+  zookeeper:
+    image: dockerkafka/zookeeper
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+      - "5000:5000"
+    networks:
+      - sky-net
+
+  kafka:
+    image: dockerkafka/kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+    networks:
+      - sky-net
+
+  kafka-producer:
+    build:
+      context: .
+      dockerfile: producer/Dockerfile
+    image: kafka-producer:1.0.1
+    environment: 
+      - BROKER_ADDR=kafka:9092
+    depends_on:
+      - zookeeper
+      - kafka
+    links:
+      - kafka
+    networks:
+      - sky-net
+
+  kafka-subscriber:
+    build:
+      context: .
+      dockerfile: subscriber/Dockerfile
+    image: kafka-subscriber:1.0.1     
+    environment: 
+      - BROKER_ADDR=kafka:9092 
+    depends_on:
+      - zookeeper
+      - kafka
+    links:
+      - kafka
+    networks:
+      - sky-net
+
+networks:
+  sky-net:
+    driver: bridge
+  
+```
+
+---
+#### Build & Run
+
+```sh
+$ docker-compose build
+```
 
 --- 
 # Q & A
